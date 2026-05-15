@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>問題管理システム</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f4f6f9;
+    --border: #dde2ea;
+    --border2: #c8d0dc;
+    --accent: #2563eb;
+    --accent2: #7c3aed;
+    --warn: #d97706;
+    --danger: #dc2626;
+    --success: #059669;
+    --text: #1e2533;
+    --text2: #4b5672;
+    --text3: #8792aa;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans JP', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ヘッダー */
+  .header {
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 4px rgba(30,37,51,0.07);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .app-title {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .app-subtitle {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* ボタン */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #3d6ef0; transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+  .btn-danger {
+    background: rgba(239,68,68,0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.3);
+  }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+  .btn-success {
+    background: rgba(16,185,129,0.15);
+    color: var(--success);
+    border: 1px solid rgba(16,185,129,0.3);
+  }
+  .btn-success:hover { background: rgba(16,185,129,0.25); }
+
+  /* メインレイアウト */
+  .main {
+    padding: 20px 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* フィルターバー */
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .filter-select, .filter-input {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 12px;
+    border-radius: 7px;
+    font-family: var(--sans);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .filter-select:focus, .filter-input:focus {
+    border-color: var(--accent);
+  }
+  .filter-select { min-width: 130px; }
+  .filter-input { min-width: 200px; }
+
+  .filter-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge {
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--mono);
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .badge-all { background: var(--surface2); color: var(--text2); border-color: var(--border); }
+  .badge-all.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .badge-unreplied { background: rgba(245,158,11,0.15); color: var(--warn); border-color: rgba(245,158,11,0.3); }
+  .badge-unreplied.active { background: var(--warn); color: #000; }
+  .badge-done { background: rgba(16,185,129,0.15); color: var(--success); border-color: rgba(16,185,129,0.3); }
+  .badge-done.active { background: var(--success); color: #fff; }
+
+  .spacer { flex: 1; }
+
+  .stats {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  .stat-warn .stat-num { color: var(--warn); }
+  .stat-ok .stat-num { color: var(--success); }
+  .stat-total .stat-num { color: var(--accent); }
+
+  /* テーブル */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    background: var(--surface2);
+    padding: 11px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+  }
+  thead th:hover { color: var(--text); }
+  thead th.sort-asc::after { content: " ↑"; color: var(--accent); }
+  thead th.sort-desc::after { content: " ↓"; color: var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+
+  tbody tr.row-unreplied { background: #fffbeb; }
+  tbody tr.row-unreplied:hover { background: #fef3c7; }
+  tbody tr.row-overdue { background: #fff1f1 !important; }
+  tbody tr.row-overdue:hover { background: #ffe4e4 !important; }
+  .overdue-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.6; }
+  }
+  tbody tr.row-done { background: #f0fdf4; opacity: 0.85; }
+  tbody tr.row-done:hover { background: #dcfce7; }
+
+  td {
+    padding: 12px 14px;
+    vertical-align: top;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .td-mono {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .td-client { color: var(--text2); font-size: 12px; white-space: nowrap; }
+
+  .td-person {
+    white-space: nowrap;
+  }
+
+  .person-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .person-avatar {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .td-content {
+    max-width: 280px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  .td-reply {
+    max-width: 280px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .no-reply {
+    color: var(--text3);
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .td-date {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    white-space: nowrap;
+    line-height: 1.6;
+  }
+
+  .td-actions {
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .action-btns {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-btn {
+    width: 30px; height: 30px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface2); color: var(--text); }
+  .icon-btn.reply-btn:hover { background: rgba(5,150,105,0.12); color: var(--success); border-color: rgba(5,150,105,0.4); }
+  .icon-btn.done-btn:hover { background: rgba(79,126,248,0.15); color: var(--accent); border-color: rgba(79,126,248,0.4); }
+  .icon-btn.edit-btn:hover { background: rgba(79,126,248,0.15); color: var(--accent); border-color: rgba(79,126,248,0.4); }
+  .icon-btn.del-btn:hover { background: rgba(239,68,68,0.15); color: var(--danger); border-color: rgba(239,68,68,0.4); }
+
+  .done-mark {
+    color: var(--success);
+    font-size: 18px;
+  }
+
+  /* 空状態 */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* モーダル */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,25,50,0.45);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.15s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease;
+    box-shadow: 0 24px 64px rgba(30,37,51,0.18);
+  }
+
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .modal-close {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: none;
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { background: var(--border); color: var(--text); }
+
+  .modal-body {
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  /* フォーム */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    background: #f8fafc;
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,126,248,0.1);
+  }
+  .form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.5;
+  }
+  .form-select option { background: var(--surface); }
+
+  /* 履歴タブ */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 16px 10px;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(30,37,51,0.06);
+    min-height: 56px;
+  }
+  .tab:hover {
+    background: var(--surface2);
+    border-color: var(--border2);
+    color: var(--text);
+  }
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(37,99,235,0.25);
+  }
+  #tab-replied.active {
+    background: #059669;
+    border-color: #059669;
+    box-shadow: 0 3px 10px rgba(5,150,105,0.25);
+  }
+  #tab-done.active {
+    background: #6b7280;
+    border-color: #6b7280;
+    box-shadow: 0 3px 10px rgba(107,114,128,0.2);
+  }
+
+  .tab-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(0,0,0,0.12);
+    color: inherit;
+    padding: 2px 8px;
+    border-radius: 10px;
+    min-width: 24px;
+    text-align: center;
+  }
+  .tab.active .tab-count {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+  }
+
+  /* Toast */
+  .toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    background: #ffffff;
+    border: 1px solid var(--border2);
+    color: var(--text);
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    box-shadow: 0 8px 24px rgba(30,37,51,0.12);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: slideUp 0.2s ease;
+    max-width: 320px;
+  }
+  .toast.success { border-color: var(--success); }
+  .toast.error { border-color: var(--danger); }
+
+  /* ローディング */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: var(--text3);
+    gap: 10px;
+  }
+
+  .spinner {
+    width: 20px; height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 設定パネル */
+  .config-notice {
+    background: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: #92400e;
+  }
+
+  tbody tr.row-replied { background: #f0fdf4; }
+  tbody tr.row-replied:hover { background: #dcfce7; }
+
+  .tab-count-replied {
+    background: #059669 !important;
+  }
+  .reply-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 13px;
+    border-radius: 20px;
+    border: 2px solid #059669;
+    background: #fff;
+    color: #059669;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(5,150,105,0.15);
+  }
+  .reply-switch-btn:hover {
+    background: #059669;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(5,150,105,0.3);
+  }
+
+  .done-switch-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 13px;
+    border-radius: 20px;
+    border: 2px solid #2563eb;
+    background: #fff;
+    color: #2563eb;
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(37,99,235,0.15);
+  }
+  .done-switch-btn:hover {
+    background: #2563eb;
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(37,99,235,0.3);
+  }
+
+  /* 画像アップロードエリア */
+  .upload-area {
+    border: 2px dashed var(--border2);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #f8fafc;
+  }
+  .upload-area:hover, .upload-area.drag-over {
+    border-color: var(--accent);
+    background: #eff6ff;
+  }
+  .upload-hint { font-size: 12px; color: var(--text3); }
+
+  .preview-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .preview-item {
+    position: relative;
+    width: 80px; height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .preview-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .preview-item .remove-img {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 18px; height: 18px;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    border: none;
+    line-height: 1;
+  }
+  .preview-item .remove-img:hover { background: var(--danger); }
+
+  .preview-item.pdf-item {
+    background: #f0f4f8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    width: 80px; height: 80px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--text2);
+    text-align: center;
+    padding: 4px;
+    word-break: break-all;
+    position: relative;
+  }
+  .thumb-item.pdf-thumb {
+    background: #f0f4f8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #ef4444;
+    width: 48px; height: 48px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 22px;
+    transition: transform 0.15s;
+  }
+  .thumb-item.pdf-thumb:hover { transform: scale(1.08); }
+  .thumb-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .thumb-item {
+    width: 48px; height: 48px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+  }
+  .thumb-item:hover { transform: scale(1.08); }
+  .thumb-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ライトボックス */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+    animation: fadeIn 0.15s;
+  }
+  .lightbox img {
+    max-width: 92vw;
+    max-height: 88vh;
+    border-radius: 8px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+    cursor: default;
+  }
+  .lightbox-close {
+    position: absolute;
+    top: 18px; right: 22px;
+    color: #fff;
+    font-size: 28px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    opacity: 0.8;
+    transition: opacity 0.15s;
+  }
+  .lightbox-close:hover { opacity: 1; }
+  .lightbox-caption {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+
+  /* 新規登録ボタン（大） */
+  .btn-add-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.3);
+    min-height: 44px;
+  }
+  .btn-add-main:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+  }
+  .btn-add-main:active { transform: translateY(0); }
+
+  /* スマホ：新規登録を画面右下に固定 */
+  @media (max-width: 768px) {
+    .btn-add-main {
+      position: fixed;
+      bottom: 20px;
+      right: 16px;
+      z-index: 150;
+      border-radius: 50px;
+      padding: 14px 22px;
+      font-size: 15px;
+      box-shadow: 0 4px 16px rgba(37,99,235,0.45);
+    }
+    .filter-bar .btn-add-main { display: none; }
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    .main { padding: 12px; padding-bottom: 80px; }
+    .header { padding: 0 12px; }
+    .stats { display: none; }
+    .form-row { grid-template-columns: 1fr; }
+    .filter-bar { flex-wrap: wrap; gap: 8px; }
+    .filter-bar .btn-add-main { display: none; }
+    .tab { font-size: 13px; padding: 14px 6px; min-height: 52px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">🔧</div>
+    <div>
+      <div class="app-title">問題管理システム</div>
+      <div class="app-subtitle">装置不具合トラッカー</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <div class="stats">
+      <div class="stat stat-warn">
+        <div class="stat-num" id="stat-unreplied">0</div>
+        <div class="stat-label">未返信</div>
+      </div>
+      <div style="width:1px;height:30px;background:var(--border)"></div>
+      <div class="stat stat-ok">
+        <div class="stat-num" id="stat-done">0</div>
+        <div class="stat-label">完了</div>
+      </div>
+      <div style="width:1px;height:30px;background:var(--border)"></div>
+      <div class="stat stat-total">
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">総件数</div>
+      </div>
+    </div>
+    <button class="btn btn-ghost" onclick="openConfig()">⚙ 設定</button>
+  </div>
+</header>
+
+<!-- メイン -->
+<main class="main">
+  <!-- 設定未完了の通知 -->
+  <div class="config-notice" id="config-notice">
+    ⚠️ <div><strong>初期設定が必要です。</strong>「設定」ボタンから Google Apps Script の URL を入力してください。<a href="#" onclick="openConfig()" style="color:var(--warn);margin-left:4px;">→ 設定を開く</a></div>
+  </div>
+
+  <!-- タブ -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('active')" id="tab-active">
+      対応中 <span class="tab-count" id="tab-count-active">0</span>
+    </button>
+    <button class="tab" onclick="switchTab('replied')" id="tab-replied">
+      回答済 <span class="tab-count tab-count-replied" id="tab-count-replied">0</span>
+    </button>
+    <button class="tab" onclick="switchTab('done')" id="tab-done">
+      完了履歴 <span class="tab-count" id="tab-count-done">0</span>
+    </button>
+  </div>
+
+  <!-- 新規登録 & フィルターバー -->
+  <div class="filter-bar">
+    <button class="btn-add-main" onclick="openAddModal()">＋ 新規登録</button>
+    <div class="filter-badge">
+      <span class="badge badge-all active" id="badge-all" onclick="setFilter('all')">すべて</span>
+      <span class="badge badge-unreplied" id="badge-unreplied" onclick="setFilter('unreplied')">未返信</span>
+    </div>
+    <select class="filter-select" id="filter-person" onchange="renderTable()">
+      <option value="">担当者: すべて</option>
+      <option>鶴田</option><option>松崎</option><option>平田</option>
+      <option>堀尾</option><option>河合</option><option>平岩</option>
+      <option>石川貴</option><option>良貴</option><option>石川哲</option>
+    </select>
+    <select class="filter-select" id="filter-machine" onchange="renderTable()">
+      <option value="">機番: すべて</option>
+    </select>
+    <input class="filter-input" type="text" id="filter-search" placeholder="🔍 キーワード検索..." oninput="renderTable()">
+    <div class="spacer"></div>
+    <button class="btn btn-ghost" onclick="loadData()" style="font-size:12px;">↻ 更新</button>
+  </div>
+
+  <!-- テーブル -->
+  <div class="table-wrap">
+    <table>
+      <thead id="table-head">
+        <tr>
+          <th onclick="sortBy('machine')" id="th-machine">機番</th>
+          <th onclick="sortBy('client')" id="th-client">客先名</th>
+          <th onclick="sortBy('person')" id="th-person">担当者</th>
+          <th>確認内容</th>
+          <th onclick="sortBy('createdAt')" id="th-createdAt">登録日</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr><td colspan="6"><div class="loading"><div class="spinner"></div> データ読み込み中...</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- 新規登録・編集モーダル -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">新規登録</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>機番 *</label>
+          <input class="form-input" id="f-machine" placeholder="例: A-001" required>
+        </div>
+        <div class="form-group">
+          <label>客先名</label>
+          <input class="form-input" id="f-client" placeholder="例: 株式会社〇〇">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>担当者 *</label>
+        <select class="form-select" id="f-person">
+          <option value="">選択してください</option>
+          <option>鶴田</option><option>松崎</option><option>平田</option>
+          <option>堀尾</option><option>河合</option><option>平岩</option>
+          <option>石川貴</option><option>良貴</option><option>石川哲</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>確認内容 *</label>
+        <textarea class="form-textarea" id="f-content" placeholder="問題・確認事項を入力..." rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label>添付ファイル（画像・PDF）</label>
+        <div class="upload-area" id="upload-area-new" onclick="document.getElementById('f-images').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'new')">
+          <div class="upload-hint">📎 クリックまたはドラッグ＆ドロップ（画像・PDF対応）</div>
+          <input type="file" id="f-images" accept="image/*,.pdf" multiple style="display:none" onchange="onFileSelect(event,'new')">
+        </div>
+        <div class="preview-list" id="preview-new"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-primary" id="modal-submit-btn" onclick="submitForm()">登録する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 回答入力モーダル -->
+<div class="modal-overlay" id="reply-modal" style="display:none" onclick="closeReplyModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">💬 回答を入力</div>
+      <button class="modal-close" onclick="closeReplyModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="reply-modal-info" style="background:#f0f4f8;border-radius:8px;padding:12px;font-size:12px;color:var(--text2);margin-bottom:4px;border:1px solid var(--border)"></div>
+      <div class="form-group">
+        <label>回答者 *</label>
+        <select class="form-select" id="f-replier">
+          <option value="">選択してください</option>
+          <option>鶴田</option><option>松崎</option><option>平田</option>
+          <option>堀尾</option><option>河合</option><option>平岩</option>
+          <option>石川貴</option><option>良貴</option><option>石川哲</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>返信内容 *</label>
+        <textarea class="form-textarea" id="f-reply-content" placeholder="回答・対策内容を入力..." rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label>添付ファイル（画像・PDF）</label>
+        <div class="upload-area" id="upload-area-reply" onclick="document.getElementById('f-reply-images').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'reply')">
+          <div class="upload-hint">📎 クリックまたはドラッグ＆ドロップ（画像・PDF対応）</div>
+          <input type="file" id="f-reply-images" accept="image/*,.pdf" multiple style="display:none" onchange="onFileSelect(event,'reply')">
+        </div>
+        <div class="preview-list" id="preview-reply"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeReplyModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="submitReply()">回答済にする</button>
+    </div>
+  </div>
+</div>
+
+<!-- 設定モーダル -->
+<div class="modal-overlay" id="config-modal" style="display:none" onclick="closeConfigOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ 設定</div>
+      <button class="modal-close" onclick="closeConfigModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f0f4f8;border-radius:10px;padding:16px;font-size:12px;color:var(--text2);line-height:1.8;border:1px solid var(--border)">
+        <strong style="color:var(--text);font-size:13px;">Google Apps Script セットアップ手順</strong><br><br>
+        1. <a href="https://script.google.com" target="_blank" style="color:var(--accent)">script.google.com</a> を開く<br>
+        2. 「新しいプロジェクト」を作成<br>
+        3. 下の「GASコードをコピー」ボタンのコードを貼り付け<br>
+        4. SPREADSHEET_ID を自分のスプレッドシートIDに変更<br>
+        5. 「デプロイ」→「新しいデプロイ」→「ウェブアプリ」<br>
+        6. アクセスを「全員」に設定してデプロイ<br>
+        7. 発行された URL を下に貼り付けて保存
+      </div>
+      <div class="form-group">
+        <label>Google Apps Script URL</label>
+        <input class="form-input" id="gas-url" placeholder="https://script.google.com/macros/s/xxxxx/exec">
+      </div>
+      <button class="btn btn-ghost" onclick="copyGasCode()" style="font-size:12px;width:100%;justify-content:center;">📋 GASコードをコピー</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeConfigModal()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveConfig()">保存して接続</button>
+    </div>
+  </div>
+</div>
+
+<!-- スマホ用 固定新規登録ボタン -->
+<button class="btn-add-main" id="fab-add" onclick="openAddModal()" style="display:none">＋ 新規登録</button>
+
+<!-- ライトボックス -->
+<div class="lightbox" id="lightbox" style="display:none" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ===== State =====
+let records = [];
+let repliedRecords = [];
+let historyRecords = [];
+let currentTab = 'active';
+let filterMode = 'all';
+let sortKey = 'createdAt';
+let sortDir = 'desc';
+let editingId = null;
+let replyingId = null;
+let GAS_URL = localStorage.getItem('gas_url') || '';
+
+// 画像バッファ（モーダルごとにBase64リストを保持）
+let imgBuf = { new: [], reply: [] };
+
+// ===== Init =====
+document.addEventListener('DOMContentLoaded', () => {
+  updateConfigNotice();
+  loadData();
+  // スマホ判定でFABを表示
+  function updateFab() {
+    const fab = document.getElementById('fab-add');
+    if (fab) fab.style.display = window.innerWidth <= 768 ? 'inline-flex' : 'none';
+  }
+  updateFab();
+  window.addEventListener('resize', updateFab);
+});
+
+function updateConfigNotice() {
+  document.getElementById('config-notice').style.display = GAS_URL ? 'none' : 'flex';
+}
+
+// ===== Data =====
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch(e) {
+    clearTimeout(timer);
+    if (e.name === 'AbortError') throw new Error('TIMEOUT');
+    throw e;
+  }
+}
+
+async function loadData() {
+  if (!GAS_URL) { renderDemoData(); return; }
+
+  // ローディング表示
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = `<tr><td colspan="8"><div class="loading"><div class="spinner"></div> データ読み込み中...</div></td></tr>`;
+
+  try {
+    const res = await fetchWithTimeout(GAS_URL + '?action=getAll', {}, 15000);
+    const data = await res.json();
+    const parseFiles = val => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      if (typeof val === 'string') {
+        try { const p = JSON.parse(val); return Array.isArray(p) ? p : []; }
+        catch { return []; }
+      }
+      return [];
+    };
+    const normalize = arr => (arr || []).map(r => ({
+      ...r,
+      id: String(r.id),
+      images: parseFiles(r.images),
+      replyImages: parseFiles(r.replyImages)
+    }));
+    records = normalize(data.active);
+    repliedRecords = normalize(data.replied);
+    historyRecords = normalize(data.done);
+    updateStats();
+    renderTable();
+    updateMachineFilter();
+  } catch(e) {
+    const msg = e.message === 'TIMEOUT'
+      ? 'GASの応答がタイムアウトしました。URLを確認してください。'
+      : `データ取得に失敗しました（${e.message}）`;
+    showToast(msg, 'error');
+    // エラー内容をテーブルに表示
+    tbody.innerHTML = `<tr><td colspan="8">
+      <div class="empty-state">
+        <div class="empty-icon">⚠️</div>
+        <p style="color:var(--danger);font-weight:600">${msg}</p>
+        <p style="margin-top:8px;font-size:12px;color:var(--text3)">
+          ⚙ 設定ボタンからGAS URLを確認してください
+        </p>
+        <button class="btn btn-ghost" onclick="loadData()" style="margin-top:12px">↻ 再読み込み</button>
+      </div>
+    </td></tr>`;
+    // デモデータは表示しない（実データと混在を防ぐ）
+    records = []; repliedRecords = []; historyRecords = [];
+    updateStats();
+  }
+}
+
+function renderDemoData() {
+  records = [
+    { id:'1', machine:'A-001', client:'株式会社〇〇', person:'鶴田', content:'インバータのアラームが頻発している。原因を確認してほしい。', reply:'', createdAt:'2025/04/15 09:12', repliedAt:'', done:false },
+    { id:'3', machine:'A-001', client:'株式会社〇〇', person:'鶴田', content:'非常停止後の復帰手順を確認したい。', reply:'', createdAt:'2025/04/13 14:30', repliedAt:'', done:false },
+    { id:'5', machine:'B-003', client:'△△工業', person:'松崎', content:'操作パネルのタッチが反応しない箇所がある。', reply:'', createdAt:'2025/04/10 11:05', repliedAt:'', done:false },
+  ];
+  repliedRecords = [
+    { id:'2', machine:'B-003', client:'△△工業', person:'松崎', content:'搬送速度が設定値より遅い。調整方法を教えてほしい。', reply:'パラメータP03を85→90に変更してください。', createdAt:'2025/04/14 10:20', repliedAt:'2025/04/15 13:45', done:false },
+    { id:'4', machine:'C-007', client:'□□製作所', person:'平田', content:'センサの感度が不安定。交換が必要か？', reply:'現地確認後、センサ交換を推奨します。手配済み。', createdAt:'2025/04/12 08:55', repliedAt:'2025/04/13 16:10', done:false },
+  ];
+  historyRecords = [
+    { id:'h1', machine:'B-003', client:'△△工業', person:'松崎', content:'電源投入時にエラーコードE05が表示される。', reply:'電源基板交換により解決。', createdAt:'2025/04/01 09:00', repliedAt:'2025/04/03 15:30', done:true, doneAt:'2025/04/05 10:00' },
+  ];
+  updateStats();
+  renderTable();
+  updateMachineFilter();
+}
+
+// ===== Render =====
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const head = document.getElementById('table-head');
+
+  // ヘッダー切り替え
+  if (currentTab === 'active') {
+    head.innerHTML = `<tr>
+      <th style="width:120px">操作</th>
+      <th onclick="sortBy('machine')" id="th-machine">機番</th>
+      <th onclick="sortBy('client')" id="th-client">客先名</th>
+      <th onclick="sortBy('person')" id="th-person">担当者</th>
+      <th>確認内容</th>
+      <th onclick="sortBy('createdAt')" id="th-createdAt" style="width:110px">登録日時</th>
+    </tr>`;
+  } else if (currentTab === 'replied') {
+    head.innerHTML = `<tr>
+      <th style="width:90px">操作</th>
+      <th onclick="sortBy('machine')" id="th-machine">機番</th>
+      <th onclick="sortBy('client')" id="th-client">客先名</th>
+      <th onclick="sortBy('person')" id="th-person">担当者</th>
+      <th>確認内容</th>
+      <th>返信内容</th>
+      <th onclick="sortBy('repliedAt')" id="th-repliedAt" style="width:110px">返信日時</th>
+    </tr>`;
+  } else {
+    head.innerHTML = `<tr>
+      <th onclick="sortBy('machine')" id="th-machine">機番</th>
+      <th onclick="sortBy('client')" id="th-client">客先名</th>
+      <th onclick="sortBy('person')" id="th-person">担当者</th>
+      <th>確認内容</th>
+      <th>返信内容</th>
+      <th onclick="sortBy('createdAt')" id="th-createdAt" style="width:110px">登録日時</th>
+      <th onclick="sortBy('repliedAt')" id="th-repliedAt" style="width:110px">返信日時</th>
+      <th style="width:100px">完了日</th>
+      <th style="width:60px"></th>
+    </tr>`;
+  }
+
+  let data = currentTab === 'active' ? [...records]
+           : currentTab === 'replied' ? [...repliedRecords]
+           : [...historyRecords];
+
+  // フィルター
+  const person = document.getElementById('filter-person').value;
+  const machine = document.getElementById('filter-machine').value;
+  const search = document.getElementById('filter-search').value.toLowerCase();
+
+  if (filterMode === 'unreplied') data = data.filter(r => !r.reply);
+  if (person) data = data.filter(r => r.person === person);
+  if (machine) data = data.filter(r => r.machine === machine);
+  if (search) data = data.filter(r =>
+    [r.machine, r.client, r.person, r.content, r.reply].join(' ').toLowerCase().includes(search)
+  );
+
+  // ソート
+  data.sort((a, b) => {
+    let va = a[sortKey] || '', vb = b[sortKey] || '';
+    return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+
+  // カウント更新
+  document.getElementById('tab-count-active').textContent = records.length;
+  document.getElementById('tab-count-replied').textContent = repliedRecords.length;
+  document.getElementById('tab-count-done').textContent = historyRecords.length;
+
+  const colCount = currentTab === 'active' ? 6 : currentTab === 'replied' ? 7 : 8;
+
+  if (data.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="${colCount}"><div class="empty-state"><div class="empty-icon">📋</div><p>該当する案件がありません</p></div></td></tr>`;
+    return;
+  }
+
+  const initial = r => r.person ? r.person[0] : '?';
+  const personChip = r => `<span class="person-chip"><span class="person-avatar">${esc(initial(r))}</span>${esc(r.person)}</span>`;
+
+  tbody.innerHTML = data.map(r => {
+    const rid = esc(r.id);
+    if (currentTab === 'active') {
+      const overdue = isOverdue(r.createdAt);
+      const rowClass = overdue ? 'row-overdue' : 'row-unreplied';
+      const badge = overdue ? '<span class="overdue-badge">⚠ 24H超</span>' : '';
+      return `<tr class="${rowClass}">
+        <td class="td-actions">
+          <div class="action-btns">
+            <button class="reply-switch-btn" data-action="reply" data-id="${rid}">回答</button>
+            <button class="icon-btn edit-btn" data-action="edit" data-id="${rid}" title="編集">✏️</button>
+            <button class="icon-btn del-btn" data-action="delete" data-id="${rid}" title="削除">🗑</button>
+          </div>
+        </td>
+        <td class="td-mono">${esc(r.machine)}</td>
+        <td class="td-client">${esc(r.client)}</td>
+        <td class="td-person">${personChip(r)}</td>
+        <td class="td-content">${esc(r.content)}${badge}${thumbs(r.images)}</td>
+        <td class="td-date">${fmtDate(r.createdAt)}</td>
+      </tr>`;
+    } else if (currentTab === 'replied') {
+      return `<tr class="row-replied">
+        <td class="td-actions">
+          <div class="action-btns">
+            <button class="done-switch-btn" data-action="done" data-id="${rid}">完了</button>
+            <button class="icon-btn del-btn" data-action="delete-replied" data-id="${rid}" title="削除">🗑</button>
+          </div>
+        </td>
+        <td class="td-mono">${esc(r.machine)}</td>
+        <td class="td-client">${esc(r.client)}</td>
+        <td class="td-person">${personChip(r)}</td>
+        <td class="td-content">${esc(r.content)}${thumbs(r.images)}</td>
+        <td class="td-reply">${esc(r.reply)}${thumbs(r.replyImages)}<br><span style="font-size:11px;color:var(--text3)">${r.replier ? '回答者: ' + esc(r.replier) : ''}</span></td>
+        <td class="td-date">${fmtDate(r.repliedAt || '—')}</td>
+      </tr>`;
+    } else {
+      return `<tr class="row-done">
+        <td class="td-mono">${esc(r.machine)}</td>
+        <td class="td-client">${esc(r.client)}</td>
+        <td class="td-person">${personChip(r)}</td>
+        <td class="td-content">${esc(r.content)}${thumbs(r.images)}</td>
+        <td class="td-reply">${esc(r.reply)}${thumbs(r.replyImages)}<br><span style="font-size:11px;color:var(--text3)">${r.replier ? '回答者: ' + esc(r.replier) : ''}</span></td>
+        <td class="td-date">${fmtDate(r.createdAt)}</td>
+        <td class="td-date">${fmtDate(r.repliedAt || '—')}</td>
+        <td class="td-date">${fmtDate(r.doneAt || '—')}</td>
+        <td class="td-actions"><button class="icon-btn del-btn" data-action="delete-done" data-id="${rid}" title="削除">🗑</button></td>
+      </tr>`;
+    }
+  }).join('');
+}
+
+// ===== 24H超え判定 =====
+function isOverdue(createdAt) {
+  if (!createdAt) return false;
+  const d = new Date(createdAt);
+  if (isNaN(d.getTime())) {
+    // "2025/04/15 09:12" 形式
+    const str = String(createdAt).replace(/\//g,'-').replace(' ','T');
+    const d2 = new Date(str);
+    if (isNaN(d2.getTime())) return false;
+    return (Date.now() - d2.getTime()) > 24 * 60 * 60 * 1000;
+  }
+  return (Date.now() - d.getTime()) > 24 * 60 * 60 * 1000;
+}
+
+// ===== PDF を開く =====
+function openPdf(idx, target) {
+  // テーブル上のPDF（Drive URL）はそのまま開く
+  if (typeof idx === 'string' && idx.startsWith('http')) {
+    window.open(idx, '_blank'); return;
+  }
+  // モーダルプレビューのPDF（Base64）はBlobに変換して開く
+  const list = target ? imgBuf[target] : null;
+  const f = list ? list[idx] : null;
+  if (!f) return;
+  const data = f.data || f;
+  if (typeof data === 'string' && data.startsWith('data:')) {
+    const arr = data.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    const ab = new Uint8Array(bstr.length);
+    for (let i = 0; i < bstr.length; i++) ab[i] = bstr.charCodeAt(i);
+    const blob = new Blob([ab], { type: mime });
+    const blobUrl = URL.createObjectURL(blob);
+    window.open(blobUrl, '_blank');
+  } else if (typeof data === 'string') {
+    window.open(data, '_blank');
+  }
+}
+
+// ===== サムネイル生成（画像＋PDF対応）=====
+function thumbs(files) {
+  if (!files || !files.length) return '';
+  const items = files.map((f, i) => {
+    if (typeof f === 'object' && f.type === 'pdf') {
+      const name = esc(f.name || 'PDF');
+      const url = f.url || f.data || '';
+      // Drive URLならそのまま、Base64ならopenPdf経由
+      const clickHandler = url.startsWith('http')
+        ? `openPdf('${url}')`
+        : `openPdf(${i}, '_table_${name}')`;
+      // Base64はbuf経由で開けないのでdataを直接渡す
+      return `<div class="thumb-item pdf-thumb" onclick="openPdfData('${encodeURIComponent(url)}')" title="${name}">📄</div>`;
+    }
+    const src = typeof f === 'string' ? f : (f.url || f.data || '');
+    if (!src) return '';
+    if (src.startsWith('http') && src.includes('drive.google')) {
+      return `<div class="thumb-item pdf-thumb" onclick="window.open('${src}','_blank')" title="PDF">📄</div>`;
+    }
+    return `<div class="thumb-item" onclick="openLightbox('${src}','画像 ${i+1}')"><img src="${src}" alt="画像${i+1}"></div>`;
+  }).join('');
+  return `<div class="thumb-list">${items}</div>`;
+}
+
+function openPdfData(encoded) {
+  const data = decodeURIComponent(encoded);
+  if (!data || data === '#') return;
+  if (data.startsWith('http')) { window.open(data, '_blank'); return; }
+  if (data.startsWith('data:')) {
+    try {
+      const arr = data.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      const ab = new Uint8Array(bstr.length);
+      for (let i = 0; i < bstr.length; i++) ab[i] = bstr.charCodeAt(i);
+      const blob = new Blob([ab], { type: mime });
+      window.open(URL.createObjectURL(blob), '_blank');
+    } catch(e) { showToast('PDFを開けませんでした', 'error'); }
+  }
+}
+
+// ===== ライトボックス =====
+function openLightbox(src, caption) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox-caption').textContent = caption || '';
+  document.getElementById('lightbox').style.display = 'flex';
+}
+function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeLightbox(); } });
+
+// ===== 画像アップロードUI =====
+function onDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function onDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function onDrop(e, target) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/') || f.type === 'application/pdf');
+  processFiles(files, target);
+}
+function onFileSelect(e, target) {
+  processFiles([...e.target.files], target);
+  e.target.value = '';
+}
+function processFiles(files, target) {
+  files.forEach(file => {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (isPdf) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        imgBuf[target].push({ type:'pdf', name: file.name, data: ev.target.result });
+        renderPreviews(target);
+      };
+      reader.readAsDataURL(file);
+    } else if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        imgBuf[target].push(ev.target.result);
+        renderPreviews(target);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      showToast('画像またはPDFファイルのみ添付できます', 'error');
+    }
+  });
+}
+function renderPreviews(target) {
+  const container = document.getElementById('preview-' + target);
+  if (!container) return;
+  container.innerHTML = imgBuf[target].map((f, i) => {
+    // PDFオブジェクト（Base64またはDrive URL）
+    if (typeof f === 'object' && f.type === 'pdf') {
+      const encoded = encodeURIComponent(f.url || f.data || '');
+      return `<div class="preview-item pdf-item" onclick="openPdfData('${encoded}')">
+        <span style="font-size:24px">📄</span>
+        <span style="font-size:10px;word-break:break-all;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name || 'PDF')}</span>
+        <button class="remove-img" onclick="event.stopPropagation();removeImg(${i},'${target}')">✕</button>
+      </div>`;
+    }
+    // Drive URL文字列（画像）
+    if (typeof f === 'string' && f.startsWith('http')) {
+      return `<div class="preview-item">
+        <img src="${f}" alt="preview" onclick="openLightbox('${f}','プレビュー ${i+1}')">
+        <button class="remove-img" onclick="event.stopPropagation();removeImg(${i},'${target}')">✕</button>
+      </div>`;
+    }
+    // Base64画像
+    if (typeof f === 'string' && f.startsWith('data:')) {
+      return `<div class="preview-item">
+        <img src="${f}" alt="preview" onclick="openLightbox('${f}','プレビュー ${i+1}')">
+        <button class="remove-img" onclick="event.stopPropagation();removeImg(${i},'${target}')">✕</button>
+      </div>`;
+    }
+    return '';
+  }).join('');
+}
+function removeImg(idx, target) { imgBuf[target].splice(idx, 1); renderPreviews(target); }
+function clearImgBuf(target) { imgBuf[target] = []; renderPreviews(target); }
+
+async function uploadImages(files, folder) {
+  if (!files || !files.length) return [];
+  if (!GAS_URL) {
+    showToast('GAS URL未設定のためアップロードをスキップ', 'error');
+    return files;
+  }
+  const serialized = files.map(f => {
+    if (typeof f === 'string') return { type:'image', data: f };
+    return f;
+  });
+  showToast(`📤 ファイル${files.length}件をアップロード中...`);
+  try {
+    const res = await fetchWithTimeout(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'uploadImages', images: serialized, folder })
+    }, 60000); // 60秒に延長
+    const data = await res.json();
+    if (data.urls && data.urls.length) {
+      showToast(`✅ アップロード完了（${data.urls.length}件）`);
+      return files.map((f, i) => {
+        const url = data.urls[i];
+        if (!url) return f;
+        if (typeof f === 'object' && f.type === 'pdf') return { type:'pdf', name: f.name, url };
+        return url;
+      });
+    }
+    showToast('アップロード応答が空でした', 'error');
+    return files;
+  } catch(e) {
+    showToast(`アップロード失敗: ${e.message}`, 'error');
+    return files;
+  }
+}
+
+function fmtDate(str) {
+  if (!str || str === '—') return '—';
+  // ISO形式（2026-05-15T00:00:00.000Z など）をパース
+  const d = new Date(str);
+  if (!isNaN(d.getTime()) && String(str).includes('T')) {
+    const date = d.toLocaleDateString('ja-JP', {year:'numeric', month:'2-digit', day:'2-digit'});
+    const time = d.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
+    return `${esc(date)}<br><span style="color:var(--text2);font-size:11px">${esc(time)}</span>`;
+  }
+  // 既存形式「2025/04/15 09:12」
+  const parts = String(str).split(' ');
+  if (parts.length === 2) return `${esc(parts[0])}<br><span style="color:var(--text2);font-size:11px">${esc(parts[1])}</span>`;
+  return esc(str);
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function updateStats() {
+  document.getElementById('stat-unreplied').textContent = records.length;
+  document.getElementById('stat-done').textContent = historyRecords.length;
+  document.getElementById('stat-total').textContent = records.length + repliedRecords.length + historyRecords.length;
+}
+
+function updateMachineFilter() {
+  const all = [...records, ...repliedRecords, ...historyRecords];
+  const machines = [...new Set(all.map(r => r.machine))].sort();
+  const sel = document.getElementById('filter-machine');
+  sel.innerHTML = '<option value="">機番: すべて</option>' +
+    machines.map(m => `<option>${esc(m)}</option>`).join('');
+}
+
+// ===== Sort =====
+function sortBy(key) {
+  if (sortKey === key) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortKey = key; sortDir = 'desc'; }
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+  });
+  const th = document.getElementById('th-' + key);
+  if (th) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+  renderTable();
+}
+
+// ===== Filter =====
+function setFilter(mode) {
+  filterMode = mode;
+  document.getElementById('badge-all').classList.toggle('active', mode === 'all');
+  document.getElementById('badge-unreplied').classList.toggle('active', mode === 'unreplied');
+  renderTable();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  ['active','replied','done'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  const badgeUnreplied = document.getElementById('badge-unreplied');
+  badgeUnreplied.style.display = tab === 'active' ? '' : 'none';
+  renderTable();
+}
+
+// ===== テーブルボタン イベント委譲 =====
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const action = btn.dataset.action;
+  const id = btn.dataset.id;
+  if (action === 'reply') openReplyModal(id);
+  else if (action === 'edit') openEditModal(id);
+  else if (action === 'delete') confirmDelete(id);
+  else if (action === 'done') markDone(id);
+  else if (action === 'delete-replied') confirmDelete(id, 'replied');
+  else if (action === 'delete-done') confirmDelete(id, 'done');
+});
+
+// ===== 新規登録・編集モーダル =====
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modal-title').textContent = '新規登録';
+  document.getElementById('modal-submit-btn').textContent = '登録する';
+  ['f-machine','f-client','f-content'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-person').value = '';
+  clearImgBuf('new');
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function openEditModal(id) {
+  const sid = String(id);
+  const r = records.find(r => String(r.id) === sid);
+  if (!r) { showToast('データが見つかりません', 'error'); return; }
+  editingId = r.id;
+  document.getElementById('modal-title').textContent = '編集';
+  document.getElementById('modal-submit-btn').textContent = '更新する';
+  document.getElementById('f-machine').value = r.machine || '';
+  document.getElementById('f-client').value = r.client || '';
+  document.getElementById('f-person').value = r.person || '';
+  document.getElementById('f-content').value = r.content || '';
+  // 既存の添付ファイルをバッファに読み込んでプレビュー表示
+  imgBuf['new'] = Array.isArray(r.images) ? [...r.images] : [];
+  renderPreviews('new');
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+function closeModalOutside(e) { if (e.target.id === 'modal') closeModal(); }
+
+async function submitForm() {
+  const machine = document.getElementById('f-machine').value.trim();
+  const client = document.getElementById('f-client').value.trim();
+  const person = document.getElementById('f-person').value;
+  const content = document.getElementById('f-content').value.trim();
+
+  if (!machine || !person || !content) {
+    showToast('機番・担当者・確認内容は必須です', 'error'); return;
+  }
+
+  const now1 = new Date();
+  const today = now1.toLocaleDateString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'/') + ' ' + now1.toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'});
+
+  // 画像以外はすぐに画面反映（楽観的UI）
+  const localImages = [...imgBuf['new']];
+
+  // 新規追加分（Base64）と既存アップロード済み（URL）を分離
+  const newFiles = localImages.filter(f => {
+    if (typeof f === 'object' && f.type === 'pdf') return !!(f.data && f.data.startsWith('data:'));
+    return typeof f === 'string' && f.startsWith('data:');
+  });
+  const alreadyUploaded = localImages.filter(f => {
+    if (typeof f === 'object' && f.type === 'pdf') return !!(f.url && f.url.startsWith('http'));
+    return typeof f === 'string' && f.startsWith('http');
+  });
+
+  if (editingId) {
+    const idx = records.findIndex(r => String(r.id) === String(editingId));
+    if (idx !== -1) {
+      records[idx] = { ...records[idx], machine, client, person, content, images: localImages };
+    }
+    showToast('更新しました ✅');
+  } else {
+    const newRecord = { id: Date.now().toString(), machine, client, person, content,
+      images: localImages, reply:'', replier:'', replyImages:[],
+      createdAt: today, repliedAt:'', done:false };
+    records.unshift(newRecord);
+    showToast('登録しました ✅');
+  }
+
+  clearImgBuf('new');
+  updateStats(); updateMachineFilter(); renderTable();
+  closeModal();
+
+  // バックグラウンドでアップロード → GAS保存（Base64は絶対に送らない）
+  const uploadedNew = newFiles.length ? await uploadImages(newFiles, 'questions') : [];
+  const finalImages = [...alreadyUploaded, ...uploadedNew];
+
+  if (editingId) {
+    const idx = records.findIndex(r => String(r.id) === String(editingId));
+    if (idx !== -1) {
+      records[idx].images = finalImages;
+      renderTable(); // サムネイルをURLに差し替え
+      saveToGas('update', records[idx]);
+    }
+  } else {
+    const rec = records.find(r => !r.reply && r.createdAt === today);
+    if (rec) {
+      rec.images = finalImages;
+      renderTable();
+      saveToGas('add', rec);
+    }
+  }
+}
+
+// ===== 回答済モーダル =====
+function openReplyModal(id) {
+  const sid = String(id);
+  const r = records.find(r => String(r.id) === sid);
+  if (!r) { showToast('データが見つかりません', 'error'); return; }
+  replyingId = r.id;
+  document.getElementById('reply-modal-info').innerHTML =
+    `<strong style="color:var(--text)">機番：${esc(r.machine)}　${esc(r.client)}　${esc(r.person)}</strong><br>${esc(r.content)}`;
+  document.getElementById('f-reply-content').value = '';
+  document.getElementById('f-replier').value = '';
+  clearImgBuf('reply');
+  document.getElementById('reply-modal').style.display = 'flex';
+}
+
+function closeReplyModal() { document.getElementById('reply-modal').style.display = 'none'; }
+function closeReplyModalOutside(e) { if (e.target.id === 'reply-modal') closeReplyModal(); }
+
+async function submitReply() {
+  const reply = document.getElementById('f-reply-content').value.trim();
+  const replier = document.getElementById('f-replier').value;
+  if (!reply) { showToast('返信内容を入力してください', 'error'); return; }
+  if (!replier) { showToast('回答者を選択してください', 'error'); return; }
+
+  const idx = records.findIndex(r => String(r.id) === String(replyingId));
+  if (idx === -1) return;
+
+  const now2 = new Date();
+  const today2 = now2.toLocaleDateString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'/') + ' ' + now2.toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'});
+
+  const localReplyImages = [...imgBuf['reply']];
+  const newReplyFiles = localReplyImages.filter(f =>
+    typeof f === 'object' ? !!(f.data && f.data.startsWith('data:')) : (typeof f === 'string' && f.startsWith('data:'))
+  );
+  const alreadyUploadedReply = localReplyImages.filter(f =>
+    typeof f === 'object' ? !!(f.url && f.url.startsWith('http')) : (typeof f === 'string' && f.startsWith('http'))
+  );
+
+  const r = { ...records[idx], reply, replier, replyImages: localReplyImages, repliedAt: today2 };
+  records.splice(idx, 1);
+  repliedRecords.unshift(r);
+
+  clearImgBuf('reply');
+  updateStats(); renderTable();
+  closeReplyModal();
+  showToast('回答済に移動しました 💬');
+
+  // バックグラウンドでアップロード → GAS保存（Base64は送らない）
+  const uploadedReply = newReplyFiles.length ? await uploadImages(newReplyFiles, 'replies') : [];
+  const finalReplyImages = [...alreadyUploadedReply, ...uploadedReply];
+  r.replyImages = finalReplyImages;
+  const ridx = repliedRecords.findIndex(x => String(x.id) === String(r.id));
+  if (ridx !== -1) { repliedRecords[ridx].replyImages = finalReplyImages; renderTable(); }
+  saveToGas('reply', r);
+}
+
+// ===== 完了 =====
+async function markDone(id) {
+  const idx = repliedRecords.findIndex(r => String(r.id) === String(id));
+  if (idx === -1) return;
+  const now3 = new Date();
+  const doneAt = now3.toLocaleDateString('ja-JP', {year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'/') + ' ' + now3.toLocaleTimeString('ja-JP', {hour:'2-digit',minute:'2-digit'});
+  const r = { ...repliedRecords[idx], done:true, doneAt };
+  repliedRecords.splice(idx, 1);
+  historyRecords.unshift(r);
+
+  updateStats(); renderTable();
+  showToast('完了履歴に移動しました 🎉');
+
+  saveToGas('done', r); // バックグラウンドで保存
+}
+
+// ===== 削除確認ダイアログ =====
+function confirmDelete(id, from) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:400;display:flex;align-items:center;justify-content:center';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:14px;padding:28px 28px 20px;max-width:340px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);text-align:center">
+      <div style="font-size:32px;margin-bottom:10px">🗑</div>
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px">削除しますか？</div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:20px">この操作は元に戻せません</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button id="del-cancel" style="padding:8px 20px;border-radius:8px;border:1px solid #dde2ea;background:#fff;cursor:pointer;font-size:13px">キャンセル</button>
+        <button id="del-confirm" style="padding:8px 20px;border-radius:8px;border:none;background:#ef4444;color:#fff;cursor:pointer;font-size:13px;font-weight:600">削除する</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  document.getElementById('del-cancel').onclick = () => overlay.remove();
+  document.getElementById('del-confirm').onclick = () => {
+    overlay.remove();
+    deleteRecord(id, from);
+  };
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+}
+
+// ===== 削除 =====
+async function deleteRecord(id, from) {
+  const list = from === 'replied' ? repliedRecords
+             : from === 'done'    ? historyRecords
+             : records;
+  const idx = list.findIndex(r => String(r.id) === String(id));
+  if (idx === -1) return;
+  const r = list[idx];
+  list.splice(idx, 1);
+  updateStats();
+  renderTable();
+  showToast('削除しました');
+  const gasAction = from === 'replied' ? 'delete-replied'
+                  : from === 'done'    ? 'delete-done'
+                  : 'delete';
+  saveToGas(gasAction, r);
+}
+
+// ===== GAS 通信 =====
+async function saveToGas(action, record) {
+  if (!GAS_URL) return;
+  try {
+    await fetchWithTimeout(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action, record })
+    }, 15000);
+  } catch(e) {
+    showToast('保存に失敗しました（ローカルのみ反映）', 'error');
+  }
+}
+
+// ===== Config =====
+function openConfig() {
+  document.getElementById('gas-url').value = GAS_URL;
+  document.getElementById('config-modal').style.display = 'flex';
+}
+function closeConfigModal() { document.getElementById('config-modal').style.display = 'none'; }
+function closeConfigOutside(e) { if (e.target.id === 'config-modal') closeConfigModal(); }
+
+function saveConfig() {
+  GAS_URL = document.getElementById('gas-url').value.trim();
+  localStorage.setItem('gas_url', GAS_URL);
+  updateConfigNotice();
+  closeConfigModal();
+  showToast('設定を保存しました。データを再読込します...');
+  setTimeout(loadData, 500);
+}
+
+const GAS_CODE = `// ===== Google Apps Script コード（画像対応版）=====
+const SPREADSHEET_ID = 'ここにスプレッドシートのIDを入力'; // ★要変更
+const FOLDER_NAME    = '問題管理_添付画像';                 // Driveフォルダ名
+const SHEET_ACTIVE   = '問題管理';
+const SHEET_REPLIED  = '回答済';
+const SHEET_DONE     = '完了履歴';
+const COLS = ['id','machine','client','person','content','images','reply','replier','replyImages','createdAt','repliedAt','done','doneAt'];
+
+function doGet(e) {
+  if (e.parameter.action === 'getAll') return getAll();
+  return ContentService.createTextOutput('OK');
+}
+
+function doPost(e) {
+  const data = JSON.parse(e.postData.contents);
+  const { action, record, images, folder } = data;
+  if (action === 'uploadImages') return uploadImages(images, folder);
+  if (action === 'add')    addRecord(record);
+  if (action === 'update') updateRecord(record);
+  if (action === 'reply')  moveToReplied(record);
+  if (action === 'done')   moveToDone(record);
+  if (action === 'delete') deleteFromSheet(record, SHEET_ACTIVE);
+  if (action === 'delete-replied') deleteFromSheet(record, SHEET_REPLIED);
+  if (action === 'delete-done')    deleteFromSheet(record, SHEET_DONE);
+  return ContentService.createTextOutput(JSON.stringify({ok:true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// 画像・PDFをDriveにアップロードしてURLを返す
+function uploadImages(fileList, folderName) {
+  const root = DriveApp.getRootFolder();
+  const existing = root.getFoldersByName(FOLDER_NAME);
+  const folder = existing.hasNext() ? existing.next() : root.createFolder(FOLDER_NAME);
+  const urls = fileList.map(f => {
+    const isPdf = (f.type === 'pdf');
+    const b64 = f.data || f;
+    if (!b64 || !String(b64).startsWith('data:')) return String(b64);
+    const commaIdx = String(b64).indexOf(',');
+    const header = isPdf ? 'application/pdf' : String(b64).substring(5, String(b64).indexOf(';'));
+    const base64Data = String(b64).substring(commaIdx + 1);
+    const ext = isPdf ? '.pdf' : '.png';
+    const blob = Utilities.newBlob(Utilities.base64Decode(base64Data), header, 'file_' + Date.now() + ext);
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return 'https://drive.google.com/file/d/' + file.getId() + '/view';
+  });
+  return ContentService.createTextOutput(JSON.stringify({urls}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getAll() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const active  = sheetToJson(ss.getSheetByName(SHEET_ACTIVE));
+  const replied = sheetToJson(ss.getSheetByName(SHEET_REPLIED));
+  const done    = sheetToJson(ss.getSheetByName(SHEET_DONE));
+  return ContentService.createTextOutput(JSON.stringify({active,replied,done}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function sheetToJson(sheet) {
+  if (!sheet) return [];
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 2) return [];
+  const h = rows[0];
+  return rows.slice(1).map(row => {
+    const obj = {};
+    h.forEach((k,i) => {
+      // JSON配列カラムをパース
+      if (k === 'images' || k === 'replyImages') {
+        try { obj[k] = JSON.parse(row[i] || '[]'); } catch { obj[k] = []; }
+      } else { obj[k] = row[i]; }
+    });
+    return obj;
+  });
+}
+
+function ensureSheet(ss, name) {
+  let s = ss.getSheetByName(name);
+  if (!s) {
+    // 既存の空シートがあればリネームして使う
+    const sheets = ss.getSheets();
+    const empty = sheets.find(sh => sh.getLastRow() === 0 && sh.getName() !== SHEET_ACTIVE && sh.getName() !== SHEET_REPLIED && sh.getName() !== SHEET_DONE);
+    if (empty) {
+      empty.setName(name);
+      s = empty;
+    } else {
+      s = ss.insertSheet(name);
+    }
+    s.appendRow(COLS);
+  } else {
+    // シートはあるがヘッダーがない場合は追加
+    const firstRow = s.getRange(1, 1, 1, COLS.length).getValues()[0];
+    if (!firstRow[0] || firstRow[0] !== 'id') {
+      s.clearContents();
+      s.appendRow(COLS);
+    }
+  }
+  return s;
+}
+
+function recordToRow(r) {
+  return COLS.map(k => {
+    if (k === 'images' || k === 'replyImages') return JSON.stringify(r[k] || []);
+    return r[k] !== undefined ? r[k] : '';
+  });
+}
+
+function addRecord(record) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ensureSheet(ss, SHEET_ACTIVE);
+  sheet.insertRowAfter(1);
+  sheet.getRange(2, 1, 1, COLS.length).setValues([recordToRow(record)]);
+}
+
+function updateRecord(record) {
+  updateInSheet(record, SHEET_ACTIVE);
+}
+
+function moveToReplied(record) {
+  deleteFromSheet(record, SHEET_ACTIVE);
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ensureSheet(ss, SHEET_REPLIED);
+  sheet.insertRowAfter(1);
+  sheet.getRange(2, 1, 1, COLS.length).setValues([recordToRow(record)]);
+}
+
+function moveToDone(record) {
+  deleteFromSheet(record, SHEET_REPLIED);
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ensureSheet(ss, SHEET_DONE);
+  sheet.insertRowAfter(1);
+  sheet.getRange(2, 1, 1, COLS.length).setValues([recordToRow(record)]);
+}
+
+function updateInSheet(record, sheetName) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(record.id)) {
+      sheet.getRange(i+1, 1, 1, COLS.length).setValues([recordToRow(record)]);
+      break;
+    }
+  }
+}
+
+function deleteFromSheet(record, sheetName) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sheet = ss.getSheetByName(sheetName);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(record.id)) {
+      sheet.deleteRow(i + 1); break;
+    }
+  }
+}`;
+
+function copyGasCode() {
+  navigator.clipboard.writeText(GAS_CODE).then(() => {
+    showToast('GASコードをコピーしました 📋');
+  });
+}
+
+// ===== Toast =====
+function showToast(msg, type = 'success') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = (type === 'success' ? '✅' : '⚠️') + ' ' + msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+</script>
+</body>
+</html>
